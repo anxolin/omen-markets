@@ -89,7 +89,7 @@
     url-parse "^1.4.7"
     web3modal "^1.1.0"
 
-"3id-resolver@^1.0.0":
+"3id-resolver@^1.0.0", "3id-resolver@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/3id-resolver/-/3id-resolver-1.0.1.tgz#13427b64732aa6d7b754fc9b2c14576e6ad21cc4"
   integrity sha512-eVB8Fpe91ihozHBevFeI7qTZXyJTykVOyJZHUtFmfX+JNQ4gCuQWCzP14VPmb2DYGcw8pjQ+reGyNL+z23euIA==

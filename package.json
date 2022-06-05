@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "3box": "^1.19.1",
+    "3id-resolver": "^1.0.1",
     "@ceramicnetwork/3id-did-resolver": "^2.0.4",
     "axios": "^0.27.2",
     "dids": "^3.2.0",
