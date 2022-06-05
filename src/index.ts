@@ -67,8 +67,19 @@ async function getMarketInfo(marketId: string) {
 
 
 async function getComments(marketId: string) {
-  const commentsUrl = getCommentsUrl(marketId)
-  return axios.get(commentsUrl)
+  const commentsFile = `markets/${marketId}/comments.json`
+  console.log('comments', commentsFile)
+  let comments = getData(commentsFile)
+
+  if (!comments) {
+    const apiUrl = getCommentsUrl(marketId)
+    comments = (await axios.get(apiUrl)).data
+    console.log(`Write Comments in: data/${commentsFile}`)
+    writeData(commentsFile, comments)
+  }
+
+
+  return comments
 }
 
 // async function getDid(key: string) {
@@ -83,12 +94,12 @@ async function main() {
     console.log()
     const marketInfo = await getMarketInfo(marketId)
     console.log(`Market ${marketId} resolved: ${marketInfo.fixedProductMarketMaker.title}`)
+
+    const comments = await getComments(marketId)
+    console.log(`Retrieved ${comments.length} comments for Market ${marketId}`)
   
     // const did = await getDid('did:3:bafyreiclhtkmlorrnlja6ggcyilhrxh3v5kvlk76u5rjsqukgyq24grmya')
     // console.log('did', did)
-  
-  
-    // const comments = await getComments(marketId)
   
     // console.log('Comments: ', comments)
   }
