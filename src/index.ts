@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { request, gql } from 'graphql-request'
 import { getMarketQuery } from './queries'
 import axios from 'axios'
 // import { DID } from 'dids'
 import fs from 'fs'
 import path from 'path'
+import { createObjectCsvWriter } from 'csv-writer'
 
 // import { getResolver } from '@ceramicnetwork/3id-did-resolver'
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -54,13 +56,18 @@ async function getMarketInfo(marketId: string) {
 
   if (!market) {
     console.log(`Get Market Information from Subgraph (ID = ${marketId})`)
-    market = await request({
+    const marketRaw = (await request({
       url: MARKET_SUBGRAPH_URL,
       document: getMarketQuery,
       variables: {
         id: marketId
       }
-    })
+    })).fixedProductMarketMaker
+    market = {
+      ...marketRaw,
+      creationDate: toIsoDate(marketRaw.creationTimestamp),
+      resolutionDate: toIsoDate(marketRaw.resolutionTimestamp),
+    }
     
     console.log(`Write Market Information in: data/${marketFile}`)
     writeData(marketFile, market)
@@ -69,6 +76,10 @@ async function getMarketInfo(marketId: string) {
   }
 
   return market
+}
+
+function toIsoDate(timestamp: number) {
+  return (new Date(timestamp * 1000)).toISOString()
 }
 
 async function getEnhancedComments(comments: any) {
@@ -87,7 +98,7 @@ async function getEnhancedComments(comments: any) {
       profile: profile,
       did,
       ethereumAddress,
-      date: (new Date(timestamp * 1000)).toISOString()
+      date: toIsoDate(timestamp)
     })
   }
 
@@ -166,18 +177,46 @@ async function getDid(key: string) {
   return didDoc
 }
 
+async function writeCsv(comments: Array<any>) {
+  const csvFile = path.join(DATA_DIR, 'comments.csv')
+  const csvWriter = createObjectCsvWriter({
+    path: csvFile,
+    header: [
+      { id: 'market.title', title: 'Market Title' },
+      { id: 'market.creationDate', title: 'Market Created' },
+      { id: 'market.resolutionDate', title: 'Market Resolved' },
+      { id: 'message', title: 'Message' },
+      { id: 'ethereumAddress', title: 'Account' },      
+      { id: 'date', title: 'Date' }
+    ],
+    headerIdDelimiter: '.'
+  })
+
+  console.log('Write CSV file: ', csvFile)
+  await csvWriter.writeRecords(comments)
+}
+
 async function main() {
   // const ipfs = await Box.getIPFS();
   // resolver = new Resolver(getResolver(ipfs));
 
+  let commentsCsv: any[] = []
   for (const marketId of MARKETS) {
     console.log()
     const marketInfo = await getMarketInfo(marketId)
-    console.log(`Market ${marketId} resolved: ${marketInfo.fixedProductMarketMaker.title}`)
+    console.log(`Market ${marketId} resolved: ${marketInfo.title}`)
 
     const comments = await getComments(marketId)
     console.log(`Retrieved ${comments.length} comments for Market ${marketId}`)  
+
+
+    commentsCsv = commentsCsv.concat(comments.map((comment: any) => ({
+      ...comment,
+      market: marketInfo
+    })))
   }
+
+  await writeCsv(commentsCsv)
 
   console.log('Success 💪')
   process.exit()
